@@ -14,6 +14,8 @@ const template = handlebars.compile(source.toString());
 
 const mime = require('./mime.js')
 
+const compress = require('./compress.js');
+
 module.exports = async function(req,res,filePath){
     try {
         const statData = await stat(filePath);
@@ -22,7 +24,11 @@ module.exports = async function(req,res,filePath){
             const contentType = mime(filePath);
             console.log(contentType)
             res.setHeader('Content-Type',contentType);
-            fs.createReadStream(filePath).pipe(res)
+            let rs = fs.createReadStream(filePath);
+            if(filePath.match(config.compress)){
+                rs = compress(rs,req,res);
+            }
+            rs.pipe(res)
         } else if (statData.isDirectory()){
             files = await readdir(filePath);
             res.statusCode = 200;
